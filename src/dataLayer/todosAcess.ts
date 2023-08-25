@@ -1,14 +1,14 @@
-import * as AWS from 'aws-sdk'
+import * as AWS from "aws-sdk";
 // import * as AWSXRay from 'aws-xray-sdk'
-import { DocumentClient } from 'aws-sdk/clients/dynamodb'
-import { createLogger } from '../utils/logger'
-import { TodoItem } from '../models/TodoItem'
-import { TodoUpdate } from '../models/TodoUpdate'
-const AWSXRay = require('aws-xray-sdk')
+import { DocumentClient } from "aws-sdk/clients/dynamodb";
+import { createLogger } from "../utils/logger";
+import { TodoItem } from "../models/TodoItem";
+import { TodoUpdate } from "../models/TodoUpdate";
+const AWSXRay = require("aws-xray-sdk");
 
-const XAWS = AWSXRay.captureAWS(AWS)
-const logger = createLogger('TodosAccess')
-const s3BucketName = process.env.ATTACHMENT_S3_BUCKET
+const XAWS = AWSXRay.captureAWS(AWS);
+const logger = createLogger("TodosAccess");
+const s3BucketName = process.env.ATTACHMENT_S3_BUCKET;
 
 // TODO: Implement the dataLayer logic
 export class TodosAccess {
@@ -17,102 +17,102 @@ export class TodosAccess {
     private readonly todosTable = process.env.TODOS_TABLE,
     private readonly todosIndex = process.env.INDEX_NAME,
     private readonly bucketName = s3BucketName
-  ) { }
+  ) {}
 
   async getAllTodos(userId: string): Promise<TodoItem[]> {
-    logger.info('Getting all todo')
+    logger.info("Getting all todo");
 
     const params = {
       TableName: this.todosTable,
       IndexName: this.todosIndex,
-      KeyConditionExpression: 'userId = :userId',
+      KeyConditionExpression: "userId = :userId",
       ExpressionAttributeValues: {
-        ':userId': userId
-      }
-    }
+        ":userId": userId,
+      },
+    };
 
-    const result = await this.docClient.query(params).promise()
-    const items = result.Items
-    return items as TodoItem[]
+    const result = await this.docClient.query(params).promise();
+    const items = result.Items;
+    return items as TodoItem[];
   }
 
   async createTodoItem(todoItem: TodoItem): Promise<TodoItem> {
-    logger.info('Creating new todo')
+    logger.info("Creating new todo");
 
     const params = {
       TableName: this.todosTable,
-      Item: todoItem
-    }
+      Item: todoItem,
+    };
 
-    const result = await this.docClient.put(params).promise()
-    logger.info('Todo item created', result)
-    return todoItem as TodoItem
+    const result = await this.docClient.put(params).promise();
+    logger.info("Todo item created", result);
+    return todoItem as TodoItem;
   }
 
   async updateTodoItem(
-    userId: string,
     todoId: string,
+    userId: string,
     todoUpdate: TodoUpdate
   ): Promise<TodoUpdate> {
-    logger.info('Updating todo')
+    logger.info("Updating todo");
 
     const params = {
       TableName: this.todosTable,
       Key: {
+        todoId,
         userId,
-        todoId
       },
-      UpdateExpression: 'set #name = :name, dueDate = :dueDate, done = :done',
+      UpdateExpression: "set #name = :name, dueDate = :dueDate, done = :done",
       ExpressionAttributeValues: {
-        ':name': todoUpdate.name,
-        ':dueDate': todoUpdate.dueDate,
-        ':done': todoUpdate.done
+        ":name": todoUpdate.name,
+        ":dueDate": todoUpdate.dueDate,
+        ":done": todoUpdate.done,
       },
       ExpressionAttributeNames: {
-        '#name': 'name'
+        "#name": "name",
       },
-      ReturnValues: 'UPDATED_NEW'
-    }
+      ReturnValues: "ALL_NEW",
+    };
 
-    await this.docClient.update(params).promise()
-    return todoUpdate as TodoUpdate
+   const result = await this.docClient.update(params).promise();
+   const  todoItemUpdate = result.Attributes
+   logger.info('todo item updated', todoItemUpdate)
+   return todoItemUpdate as TodoUpdate;
   }
 
   async deleteTodoItem(userId: string, todoId: string): Promise<string> {
-    logger.info('Deleting todo')
+    logger.info("Deleting todo");
 
     const params = {
       TableName: this.todosTable,
       Key: {
+       
+        todoId,
         userId,
-        todoId
-      }
-    }
+      },
+    };
 
-    await this.docClient.delete(params).promise()
-    return todoId as string
+    await this.docClient.delete(params).promise();
+    return todoId as string;
   }
 
-  async updateTodoAttachmentUrl(
-    todoId: string,
-    userId: string
-  ) {
-    logger.info('Updating todo attachment url')
-    const s3AttachmentUrl = `https://${this.bucketName}.s3.amazonaws.com/${todoId}`
+  async updateTodoAttachmentUrl(todoId: string, userId: string) {
+    logger.info("Updating todo attachment url");
+    const s3AttachmentUrl = `https://${this.bucketName}.s3.amazonaws.com/${todoId}`;
     const params = {
       TableName: this.todosTable,
       Key: {
         userId,
-        todoId
+        todoId,
       },
-      UpdateExpression: 'set attachmentUrl = :attachmentUrl',
+      UpdateExpression: "set attachmentUrl = :attachmentUrl",
       ExpressionAttributeValues: {
-        ':attachmentUrl': s3AttachmentUrl
+        ":attachmentUrl": s3AttachmentUrl,
       },
-      ReturnValues: 'UPDATED_NEW'
-    }
+      ReturnValues: "UPDATED_NEW",
+    };
 
-    await this.docClient.update(params).promise()
+    await this.docClient.update(params).promise();
   }
 
   async getTodoItemWithPagination(
@@ -120,40 +120,40 @@ export class TodosAccess {
     nextKey: JSON,
     limit: number
   ) {
-    logger.info(`Getting all Todo items with pagination`)
+    logger.info(`Getting all Todo items with pagination`);
 
     const params = {
       TableName: this.todosTable,
       Limit: limit,
-      KeyConditionExpression: 'userId = :userId',
+      KeyConditionExpression: "userId = :userId",
       ExpressionAttributeValues: {
-        ':userId': userId
+        ":userId": userId,
       },
       ExclusiveStartKey: nextKey,
-      ScanIndexForward: false
-    }
-    return await this.docClient.query(params).promise()
+      ScanIndexForward: false,
+    };
+    return await this.docClient.query(params).promise();
   }
 
   async searchTodos(userId: string, searchValue: string): Promise<TodoItem[]> {
-    logger.info('Search todo')
+    logger.info("Search todo");
 
     const params = {
       TableName: this.todosTable,
       IndexName: this.todosIndex,
-      KeyConditionExpression: 'userId = :userId',
-      FilterExpression: 'contains (#name,:searchValue)',
+      KeyConditionExpression: "userId = :userId",
+      FilterExpression: "contains (#name,:searchValue)",
       ExpressionAttributeNames: {
-        '#name' : 'name'
+        "#name": "name",
       },
       ExpressionAttributeValues: {
-        ':userId': userId,
-        ':searchValue': searchValue
+        ":userId": userId,
+        ":searchValue": searchValue,
       },
-    }
+    };
 
-    const result = await this.docClient.query(params).promise()
-    const items = result.Items
-    return items as TodoItem[]
+    const result = await this.docClient.query(params).promise();
+    const items = result.Items;
+    return items as TodoItem[];
   }
 }

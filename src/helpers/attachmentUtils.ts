@@ -13,9 +13,9 @@ export class AttachmentUtils {
     private readonly bucketName = s3BucketName // private readonly todosTable = process.env.TODOS_TABLE, // private readonly docClient = new XAWS.DynamoDB.DocumentClient(), // private readonly indexName = process.env.INDEX_NAME
   ) {}
 
-  // getAttachmentUrl(todoId: string) {
-  //   return `https://${this.bucketName}.s3.amazonaws.com/${todoId}`
-  // }
+  getAttachmentUrl(todoId: string) {
+    return `https://${this.bucketName}.s3.amazonaws.com/${todoId}`
+  }
 
   getUploadUrl(todoId: string): string {
     const url = this.s3.getSignedUrl('putObject', {

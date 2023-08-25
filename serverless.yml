@@ -13,7 +13,7 @@ plugins:
 
 provider:
   name: aws
-  runtime: nodejs18.x
+  runtime: nodejs16.x
   # lambdaHashingVersion: '20201221'
 
   stage: ${opt:stage, 'dev'}
@@ -27,11 +27,11 @@ provider:
   # Use these variables in the functions and resouorces section below. For example,
   # ${self:provider.environment.ATTACHMENT_S3_BUCKET}
   environment:
-    TODOS_TABLE: Serverless-c5-0203-todo-app-5-${self:provider.stage}
+    TODOS_TABLE: Serverless-c5-huyennt59-todo-app-5-${self:provider.stage}
     TODOS_CREATED_AT_INDEX: CreatedAtIndex
-    ATTACHMENT_S3_BUCKET: serverless-c5-0203-todo-app-5-images-secver-${self:provider.stage}
+    ATTACHMENT_S3_BUCKET: serverless-c5-huyennt59-todo-app-5-images-secver-${self:provider.stage}
     SIGNED_URL_EXPIRATION: 300
-    PROJECT_NAME: serverless-todo-app-5-0203-secver
+    PROJECT_NAME: serverless-todo-huyennt59-app-5-secver
     INDEX_NAME: ${self:provider.environment.TODOS_CREATED_AT_INDEX}
 
   logs:
@@ -212,30 +212,6 @@ functions:
         Resource:
           - "*"
 
-  # SearchTodos:
-  #   handler: src/lambda/http/searchTodos.handler
-  #   events:
-  #     - http:
-  #         method: post
-  #         path: todos/search
-  #         cors: true
-  #         authorizer: Auth
-  #   iamRoleStatementsName: ${self:provider.environment.PROJECT_NAME}-search-todo-role-${self:provider.stage}
-  #   iamRoleStatements:
-  #     - Effect: Allow
-  #       Action:
-  #         - dynamodb:Query
-  #       Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
-  #     - Effect: Allow
-  #       Action:
-  #         - dynamodb:Query
-  #       Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}/index/${self:provider.environment.TODOS_CREATED_AT_INDEX}
-  #     - Effect: Allow
-  #       Action:
-  #         - xray:PutTraceSegments
-  #       Resource:
-  #         - "*"
-
 resources:
   Resources:
     # Add necessary AWS resources. You will need at least the following AWS resources
@@ -308,11 +284,11 @@ resources:
       Type: AWS::S3::Bucket
       Properties:
         BucketName: ${self:provider.environment.ATTACHMENT_S3_BUCKET}
-        # PublicAccessBlockConfiguration:
-        #   BlockPublicAcls: false
-        #   BlockPublicPolicy: false
-        #   IgnorePublicAcls: false
-        #   RestrictPublicBuckets: false
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: false
+          BlockPublicPolicy: false
+          IgnorePublicAcls: false
+          RestrictPublicBuckets: false
         CorsConfiguration:
           CorsRules:
             - AllowedOrigins:
@@ -325,7 +301,7 @@ resources:
                 - POST
                 - DELETE
                 - HEAD
-              MaxAge: 3000
+              MaxAge: 300
 
     # TODO: Complete the policy below and attach it to the bucket defined above
     # For cross referencing the name of the bucket, use "!Ref AttachmentsBucket"
@@ -340,6 +316,6 @@ resources:
             - Sid: PublicReadForGetBucketObjects
               Effect: Allow
               Principal: "*"
-              Action: "*"
+              Action: "s3:GetObject"
               Resource: "arn:aws:s3:::${self:provider.environment.ATTACHMENT_S3_BUCKET}/*"
         Bucket: !Ref AttachmentsBucket
